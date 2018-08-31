@@ -1,15 +1,15 @@
 
 
-<page backtop="10mm" backbottom="10mm" backleft="5mm" backright="5mm">
+<page backtop="5mm" backbottom="5mm" backleft="5mm" backright="5mm">
   <table>
    <tr>
     <td width="350">
 
-    <p style="text-align: right; font-size:7px;"><strong>{{serial}}/{{plantel}}/{{alumno}}</strong> </p>
+    <p style="text-align: right; font-size:7px;"><strong>{{folio}}/{{serial}}/{{plantel}}/{{alumno}}</strong> </p>
 
 
 
-   <p style="text-align: justify; font-size: 7pt; "><strong>CONTRATO DE COMODATO </strong>QUE CELEBRAN POR UNA PARTE EL COLEGIO DE BACHILLERES DEL ESTADO DE CAMPECHE, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>“EL COMODANTE”, </strong>REPRESENTADA POR LA C. ING. ADLEMI SANTIAGO RAMÍREZ M. en M, , EN SU CARÁCTER DE DIRECTORA GENERAL, Y POR LA OTRA PARTE EL (LA) C. <strong>{{responsable}}, </strong>A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>“EL COMODATARIO”</strong>; Y A LA TOTALIDAD DE SUSCRIPTORES EN SU CONJUNTO SE LES DENOMINARÁ <strong>“LAS PARTES”, </strong>SUJETANDOSE AL TENOR DE LAS DECLARACIONES Y CLÁUSULAS QUE A CONTINUACIÓN SE DESCRIBEN:</p>
+   <p style="text-align: justify; font-size: 7pt; "><strong>CONTRATO DE COMODATO </strong>QUE CELEBRAN POR UNA PARTE EL COLEGIO DE BACHILLERES DEL ESTADO DE CAMPECHE, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>“EL COMODANTE”, </strong>REPRESENTADA POR LA C. ING. ADLEMI SANTIAGO RAMÍREZ M. en M, EN SU CARÁCTER DE DIRECTORA GENERAL, Y POR LA OTRA PARTE EL (LA) C. <strong>{{responsable}}, </strong>A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>“EL COMODATARIO”</strong>, QUIEN COMPARECE POR SU PROPIO Y PERSONAL DERECHO Y REPRESENTACION DEL (LA) MENOR C. <strong>{{alumno}}</strong>, EN LO SUCESIVO <strong>“EL ALUMNO</strong>; Y A LA TOTALIDAD DE SUSCRIPTORES EN SU CONJUNTO SE LES DENOMINARÁ <strong>“LAS PARTES”, </strong>SUJETANDOSE AL TENOR DE LAS DECLARACIONES Y CLÁUSULAS QUE A CONTINUACIÓN SE DESCRIBEN:</p>
 
 
 
@@ -23,13 +23,13 @@
 
     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>I.III.- </strong>Que el servicio de educación media superior que ofrece, lo lleva a cabo a través de Centros Educativos, tales como el <strong>{{plantel}}</strong>.</p>
 
-    <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>I.IV.- </strong>Que “EL COMODANTE” cuenta con equipos de cómputo y la capacidad legal de entregarlos en comodato a los alumnos adscritos al <strong>{{plantel}}, </strong>, para uso exlusivo de su formación académica y desarrollo educativo.</p>
+    <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>I.IV.- </strong>Que “EL COMODANTE” cuenta con equipos de cómputo y la capacidad legal de entregarlos en comodato a los alumnos adscritos al <strong>{{plantel}}, </strong>para uso exlusivo de su formación académica y desarrollo educativo.</p>
 
     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>I.V.- </strong>Para los efectos y fines legales del presente contrato señala el domicilio legal el inmueble ubicado en calle Oliver, número 14, entre calle Lorenzo Alfaro Alomía y Avenida Miguel Alemán área Ah Kim Pech, código postal 24014, en la ciudad de San Francisco de Campeche, municipio de Campeche, estado de Campeche, con registro federal de contribuyentes CBC900824F44.</p>
 
      <p style="text-align: left;font-size: 7pt; margin: 3px 0;"><strong>II.-</strong> De <strong>“EL COMODATARIO,</strong> por su propio y personal derecho y en representación de “EL ALUMNO”, que:</p>
 
-     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>II.I.- El (La) C. {{responsable}}, </strong>declara ser mexicano (a) por nacimiento, mayor de edad legal, con domicilio en <strong>{{direccion}}, </strong>de la localidad del plantel y que cuenta con capacidad jurídica para contratar, sin que exista ninguna circunstancia que pudiera invalidar o afectar el objeto del cumplimiento del presente contrato</p>
+     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>II.I.- El (La) C. {{responsable}}, </strong>declara ser mexicano (a) por nacimiento, mayor de edad legal, con domicilio en <strong>{{domicilio}}, </strong>de la localidad del plantel y que cuenta con capacidad jurídica para contratar, sin que exista ninguna circunstancia que pudiera invalidar o afectar el objeto del cumplimiento del presente contrato</p>
 
 
 
@@ -76,7 +76,7 @@
 
      <p style="text-align: justify; font-size: 7pt; margin: 3px 0;"><strong>OCTAVA.- “EL COMODATARIO” </strong>se compromete a dar aviso en un plazo máximo de 24 horas hábiles al Director del Plantel Escolar en caso de que el bien recibido fuera objeto de robo, extravío o daño, en caso contrario será directamente responsable de los daños, perdida o menoscabo del equipo otorgado en comodato.<strong>“EL COMODANTE”</strong>podrá fijar como penalización correspondiente sobre esta pérdida hasta el monto del valor  unitario de dicho equipo.</p>
 
-     <p style="text-align: justify; font-size: 7pt; margin: 3px 0;"><strong>NOVENA.-</strong> Al concluir el ciclo escolar 2017-2018, así como  durante los periodos de receso y en las fechas que determine <strong>“EL COMODANTE”, “EL COMODATARIO”</strong> se obliga a devolver a <strong>“EL COMODANTE”</strong> el bien que recibió en COMODATO en el estado en que se encuentre, pero respondiendo del deterioro que esté presente en caso de culpa o negligencia.</p>
+     <p style="text-align: justify; font-size: 7pt; margin: 3px 0;"><strong>NOVENA.-</strong> Al concluir el plan de estudios, así como  durante los periodos de receso y en las fechas que determine <strong>“EL COMODANTE”, “EL COMODATARIO”</strong> se obliga a devolver a <strong>“EL COMODANTE”</strong> el bien que recibió en COMODATO en el estado en que se encuentre, pero respondiendo del deterioro que esté presente en caso de culpa o negligencia.</p>
 
      <p style="text-align: justify; font-size: 7pt; margin: 3px 0;"><strong>DÉCIMA.- “EL COMODANTE” </strong>podrá notificar a <strong>“EL COMODATARIO”</strong>condiciones específicas sobre el cuidado, uso y mantenimiento del equipo entregado objeto de este contrato, condiciones que deberán ser atendidas puntualmente. En caso de no hacerlo, será también causa de rescisión y entrega del equipo. En el caso de que <strong>“EL COMODATARIO”</strong> no entregue el equipo entregado por este contrato luego de rescindirse este contrato podrá causar la penalización de no entregue el equipo entregado por este contrato luego de rescindirse este contrato podrá causar la penalización de <strong>“EL COMODATARIO”</strong>conforme a lo establecido en la cláusula octava de este contrato.</p>
  
@@ -86,7 +86,7 @@
 
      <p style="text-align: justify;font-size: 7pt; margin: 3px 0;"><strong>DÉCIMO TERCERA.- “LAS PARTES”.-</strong>manifiestan que el presente contrato es producto de la buena fe, por lo que realizarán todas las acciones que estén a su alcance y sean inherentes a su cumplimiento; en caso de controversias derivadas del mismo, <strong>“LAS PARTES”</strong> convienen solucionarlas de común acuerdo.</p>
 
-     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;">Leído que fue el presente contrato y enteradas <strong>“LAS PARTES”</strong>de su valor y contenido, se firma en la Ciudad de San Francisco de Campeche, Municipio y Estado de Campeche, a los  20 (veinte) días  del mes de febrero de 2018 (dos mil dieciocho).</p>
+     <p style="text-align: justify;font-size: 7pt; margin: 3px 0;">Leído que fue el presente contrato y enteradas <strong>“LAS PARTES”</strong>de su valor y contenido, se firma en la Ciudad de San Francisco de Campeche, Municipio y Estado de Campeche, a los  {{dia}} ({{dia_string}}) días  del mes de {{mes}} de {{anio}} ({{anio_string}}).</p>
 
     <br >
     <br ><br><br>
@@ -117,7 +117,11 @@
             <td width="170">
                  <p style="text-align: center;font-size: 8.3px; margin: 2px 0;">
                   <br><br><br>
-                  <strong>C. {{director}}
+                  <strong>C. 
+                  {{if director.titulo != 'NULL'}}
+                  {{director.titulo}} 
+                  {{endif}}
+                  {{director.nombre}}
                   <br>DIRECTOR DE CENTRO EDUCATIVO
                   </strong>
                  </p>

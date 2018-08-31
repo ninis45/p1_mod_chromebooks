@@ -28,11 +28,11 @@
 			),
 			'frontend' => false,
 			'backend' => true,
-			'menu' => 'content',
+			'menu' => 'admin',
             'roles' => array(
-				'remover', 'asignar'),
+				'create', 'admin_chrome','admin_asignaciones'),
             'sections'=>array(
-                'emails'=>array(
+                'chromebooks'=>array(
                     'name'=>'chromebook:title',
                     'uri' => 'admin/chromebooks',
         			'shortcuts' => array(
@@ -51,6 +51,11 @@
                             'modal-title' => 'Descargar datos de Google'
         				),*/
         			)
+                ),
+                'Asignaciones'=>array(
+                    'name'=>'chromebook:asinaciones_title',
+                    'uri' => 'admin/chromebooks/asignaciones',
+        			
                 )
            )
 		);

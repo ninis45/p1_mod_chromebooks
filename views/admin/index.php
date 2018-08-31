@@ -1,5 +1,9 @@
 <section ng-controller="IndexCtrl">
-    <div class="row">
+        
+    <a href="#"  ng-click="report()" uib-tooltip="Reporte" class="btn btn-primary pull-right">Reporte</a>
+
+    <div class="row col-md-12">
+
         <div class="col-md-6">
             <h4 class="text-success">Disponibles</h4>
             <input type="text" class="form-control" ng-model="txt_disponibles" />
@@ -81,12 +85,13 @@
                      </div>   
                       <div class="form-group">
                             <label>Organización</label>
-                            <select class="form-control" name="org" ng-readonly="form.id" ng-model="form.org" ng-options="org.name for org in orgs track by org.org_path" required>
+                            <select class="form-control" name="org" ng-readonly="form.id" ng-model="form.org" ng-options="org.name for org in orgs track by org.org_path"  required>
                                 <option value=""> [ Elegir ] </option>
                             </select>
                             <div ng-messages="frm.org.$error"  role="alert" ng-if="frm.org.$dirty">
                                     <div class="text-danger" ng-message="required">Este campo es requerido</div>
-                             </div>
+                            </div>
+                            
                      </div> 
                      <div class="form-group">
                             <label>Email</label>
@@ -101,7 +106,7 @@
                      
                      <div class="form-group">
                             <label>Responsable</label>
-                            <input type="text" class="form-control" name="responsable"  ng-readonly="form.id" ng-model="form.email.full_name" required>
+                            <input type="text" class="form-control" name="responsable"  ng-readonly="form.id" ng-model="form.email.full_name">
                             <div ng-messages="frm.responsable.$error"  role="alert" ng-if="frm.responsable.$dirty">
                                     <div class="text-danger" ng-message="required">Este campo es requerido</div>
                              </div>
@@ -110,6 +115,7 @@
                             <label>Observaciones</label>
                             <textarea class="form-control" ng-model="form.observaciones"></textarea>
                      </div>  
+                     {{chrome}}
                       
             </uib-tab>
             <uib-tab  heading="Historial" ng-click="history()" >
@@ -126,7 +132,13 @@
                         <tr ng-repeat="history in historial">
                         
                             <td>{{history.email}}</td>
-                            <td>{{history.asignado|date :'dd/mm/yyyy'}}</td>
+                            <td>
+                               
+                                
+                                <a title="Descargar comodato" ng-if = "history.removido == null " target="_blank" href="acuse_f/comodato/{{history.id}}" >{{history.asignado|date :'dd/mm/yyyy'}}</a>
+
+                                <span  ng-if = "history.removido" >{{history.asignado|date :'dd/mm/yyyy'}}</span>
+                            </td>
                             <td>{{history.removido}}</td>
                         </tr>
                     </tbody>
@@ -145,6 +157,38 @@
         </div>
         <button type="button" ui-wave class="btn btn-flat" ng-click="cancel()">Cancelar</button>
         <button type="button" ui-wave class="btn btn-flat btn-primary" ng-if="method!='details'" ng-click="save()" ng-disabled="!dispose || !valid_form()">Aceptar</button>
+    </div>    
+     <?php echo form_close(); ?>                       
+</script>
+<script type="text/ng-template" id="modalReport.html">
+    <div class="modal-header" >
+        <h3>Generar Reporte</h3>
+    </div>
+     <?php  echo form_open('','name="report" id="report"');?>
+    <div class="modal-body">
+
+        <div ng-bind-html="message" ng-if="message" class="alert alert-danger"></div>
+
+                   <div class="form-group">
+                             <label>Estatus</label>
+                         <div>
+                             <label class="radio-inline"><input type="radio"  ng-model="report.estatus" value="0"/> Disponibles</label>
+                             <label class="radio-inline"><input type="radio"  ng-model="report.estatus" value="1"/> Asignados</label>
+                         </div>
+                   </div>
+                      <div class="form-group" ng-if="report.estatus == 0 || report.estatus == 1 ">
+                            <label>Organización</label>
+
+                            <select class="form-control" ng-init="report.org = orgs[0]" ng-model="report.org" ng-options="org.name for org in orgs track by org.org_path" required>
+                               <option value="" > [ Elegir ] </option>
+                            </select>
+                      </div>                 
+    </div>
+    <div class="modal-footer">
+       
+                        
+        <button type="button" ui-wave class="btn btn-flat" ng-click="cancel()">Cancelar</button>
+        <button type="button" ui-wave class="btn btn-flat btn-primary" ng-click="save()" ng-disabled="!report.estatus || !report.org ">Aceptar</button>
     </div>    
      <?php echo form_close(); ?>                       
 </script>

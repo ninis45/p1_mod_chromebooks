@@ -21,12 +21,11 @@ class Asignacion_m extends MY_Model {
     {
 
         $data = array(
-                
             'id_chromebook'      => $id,
             'asignado'           => date('Y-m-d H:i:s', now()),
             'id_email'              => $input['alumno'],
             'obs_asig'           => $input['observaciones']?$input['observaciones']:NULL,
-            'responsable'		 => $input['responsable']
+            'responsable'        => $input['responsable']
             
         );
         
