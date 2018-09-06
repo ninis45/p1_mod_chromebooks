@@ -1,7 +1,7 @@
 <section ng-controller="IndexCtrl">
         
     <a href="#"  ng-click="report()" uib-tooltip="Reporte" class="btn btn-primary pull-right">Reporte</a>
-
+    <a href="#"  ng-click="remover_csv()" uib-tooltip="Reporte" class="btn btn-default pull-right">Remover por CSV</a>
     <div class="row col-md-12">
 
         <div class="col-md-6">
@@ -115,7 +115,7 @@
                             <label>Observaciones</label>
                             <textarea class="form-control" ng-model="form.observaciones"></textarea>
                      </div>  
-                     {{chrome}}
+                     
                       
             </uib-tab>
             <uib-tab  heading="Historial" ng-click="history()" >
@@ -139,7 +139,9 @@
 
                                 <span  ng-if = "history.removido" >{{history.asignado|date :'dd/mm/yyyy'}}</span>
                             </td>
-                            <td>{{history.removido}}</td>
+                            <td>
+                                <a target="_blank" href="acuse_f/devolucion/{{history.id}}" >{{history.removido|date :'dd/mm/yyyy'}}</a> 
+                            </td>
                         </tr>
                     </tbody>
                  </table>
@@ -156,7 +158,7 @@
             </div>
         </div>
         <button type="button" ui-wave class="btn btn-flat" ng-click="cancel()">Cancelar</button>
-        <button type="button" ui-wave class="btn btn-flat btn-primary" ng-if="method!='details'" ng-click="save()" ng-disabled="!dispose || !valid_form()">Aceptar</button>
+        <button type="button" ui-wave class="btn btn-flat btn-primary" ng-if="method!='details'" confirm-action ng-click="save()" ng-disabled="!dispose || !valid_form()">Aceptar</button>
     </div>    
      <?php echo form_close(); ?>                       
 </script>
@@ -189,6 +191,52 @@
                         
         <button type="button" ui-wave class="btn btn-flat" ng-click="cancel()">Cancelar</button>
         <button type="button" ui-wave class="btn btn-flat btn-primary" ng-click="save()" ng-disabled="!report.estatus || !report.org ">Aceptar</button>
+    </div>    
+     <?php echo form_close(); ?>                       
+</script>
+<script type="text/ng-template" id="modalRemoverCsv.html">
+    <div class="modal-header" >
+        <h3>Remoción Masiva</h3>
+    </div>
+     <?php  echo form_open();?>
+    <div class="modal-body">
+
+        <div class="alert alert-warning" ng-if="!dispose">Favor de no cerrar esta ventana, hasta terminar con el proceso</div> 
+        <div class="alert" ng-class="{'alert-danger':!status,'alert-success':status}"  ng-if="message"> {{message}} </div>               
+
+                      <div class="form-group">
+                            <label>Organización</label>
+                            <select class="form-control" ng-init="remove.org = orgs[0]" ng-model="remove.org" ng-options="org.name for org in orgs track by org.org_path" required>
+                               <option value="" > [ Elegir ] </option>
+                            </select>
+                      </div> 
+                     <div class="form-group" ng-if="remove.org" >
+                        <label>Archivo CSV</label>
+                        
+                                <input type="file"  accept=".csv" ngf-select="upload_file(file_csv,'csv')"  ng-model="file_csv"
+                                ngf-max-height="10000" ngf-max-size="80MB"/>
+                                <md-progress-linear md-mode="determinate" ng-show="file_csv.progress >= 0" value="{{file_csv.progress}}"></md-progress-linear>
+                                   
+                     </div>
+                     <p  class="extra" ng-if="remove_result.length>0">Errores : {{remove_result.length}}</p>
+                     <div  class="well" data-slim-scroll data-scroll-height="200px" ng-if="remove_result.length>0" >          
+                          <ul class="list-unstyled list-users-li">
+                              <li ng-repeat="remove in remove_result ">
+                                  <span class="fa fa-check text-success" ng-if="remove.status"></span>
+                                  <span class="fa {{remove.icon}} text-danger" ng-if="!remove.status" title="{{remove.message}}"></span>
+                                  {{remove.serial}}                                                                              
+                              </li>
+                          </ul>
+                      </div>                               
+    </div>
+
+    <div class="modal-footer">
+       
+                        
+        <button type="button" ui-wave class="btn btn-flat" ng-click="cancel()" ng-if="!status">Cancelar</button>
+        <button type="button" ui-wave class="btn btn-flat" ng-click="close()" ng-if="status">Aceptar</button>
+        
+        <!--button type="button" ui-wave class="btn btn-flat btn-primary" ng-disabled="!dispose" ng-click="save()" ">Aceptar</button-->
     </div>    
      <?php echo form_close(); ?>                       
 </script>

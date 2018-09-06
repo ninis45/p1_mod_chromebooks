@@ -15,7 +15,6 @@ class Admin extends Admin_Controller {
    function index()
     {   
         $this->load->library('centros/centro');
-
          $orgs_path = array();
         
          $resume = array(
@@ -23,38 +22,41 @@ class Admin extends Admin_Controller {
          );
          
          $orgs         = $this->org_m->get_all();
-         $q            = $this->input->get('q');
          $base_where   = array();
          
-         if($q)
-         {
-            $base_where['id_chromebook'] = $q;
-         } 
-
          if(!group_has_role('chromebooks','admin_chrome'))
         {
             $orgs_perm = Centro::GetPermissions('orgs');
           
             $orgs_path = $this->org_m->where_in('id',$orgs_perm)->dropdown('id','org_path');
+                if(count($orgs_path)>0)
+                 {
+                    $chromebooks  = $this->chromebook_m->where_in('org_path',$orgs_path)
+                                                ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                                                ->get_all();
+                    
+                    $asignaciones = $this->asignacion_m->where_in('org_path',$orgs_path)
+                                        ->select('id_chromebook AS id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
+                                        ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
+                                        ->where('removido IS NULL',null)
+                                        ->get_all();
+                 }
             
         }
-
-        if(count($orgs_path)>0)
-         {
-             $chromebooks = $this->chromebook_m->where_in('org_path',$orgs_path)
-                            ->order_by('org_path')
-                            ->get_all();
-         }
-          else{
-         
-         $chromebooks  = $this->chromebook_m
-                                ->order_by('org_path')
+        else{
+            $chromebooks  = $this->chromebook_m 
+                                ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
                                 ->get_all();
+            
+            $asignaciones = $this->asignacion_m->select('id_chromebook AS   id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
+                                ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
+                                ->where('removido IS NULL',null)
+                                ->get_all();
+                
         }
-        
-
+        $resume = array_merge($chromebooks,$asignaciones);
         $this->template->title($this->module_details['name'])
-                   ->append_metadata('<script type="text/javascript"> var orgs='.json_encode($orgs).', resume='.json_encode($chromebooks).';</script>')
+                   ->append_metadata('<script type="text/javascript"> var orgs='.json_encode($orgs).', resume='.json_encode($resume).';</script>')
                    ->set('chromebooks',$chromebooks)
                    ->append_js('module::chromebook.controller.js')
                    ->build('admin/chromebooks/index');
@@ -167,6 +169,57 @@ class Admin extends Admin_Controller {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function config()
+    {
+        
+         $result = array(
+         
+            'status' => false,
+            'message'=>'',
+            'data'   => array()
+         );
+           //S $chromebook = $this->chromebook_m->where(array('email IS NULL' => null, ))->get($this->input->post('id')) ;
+            $chromebook  = $this->chromebook_m->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                                ->get($this->input->post('id')) ;
+           
+            if($chromebook)
+            {
+                if($this->chromebook_m->update($this->input->post('id'),array(
+                      'estatus'  =>  $this->input->post('estatus'),
+                      'observaciones' =>$this->input->post('observaciones')?$this->input->post('observaciones'):null
+                  )))
+                {
+                    $result['status'] = true;
+                    $result['message'] = lang('chromebook:status_change');
+                }
+                else
+                {
+                 $result['message'] = lang('chromebook:error_status_change');   
+                }
+            }
+            else
+            {   
+              
+                $result['message'] = lang('chromebook:asignada');
+            }
+              
+             return $this->template->build_json($result);
+    }
     public function acuse($table='asignado',$id=0)
     {
         $chromebook = $this->chromebook_asignacion_m->get($id) ;
@@ -232,16 +285,15 @@ class Admin extends Admin_Controller {
            
             
           
-          
-           
+            
            $alumno_json = $this->curl->set_user('cobacam','1psk2355')->get('https://rk.cobacam.edu.mx/api/wsalumnos/'.$idalum.'?type=json');
            
            if(!$alumno_json)
            {
-                    $this->session->set_flashdata('error',lang('alumno:not_found'));
+                    $this->session->set_flashdata('error',sprintf(lang('alumno:not_found'),$asignacion->full_name));
                     redirect('admin/chromebooks/asignaciones');
            }
-           
+          
            $centros_json = $this->curl->init()->get('https://rk.cobacam.edu.mx/api/wscentros/?type=json');
            
            $ctrl = 0;
@@ -271,124 +323,7 @@ class Admin extends Admin_Controller {
            }
            
            $alumno = json_decode($alumno_json);
-              /* switch ($alumno->escuela) 
-                   {
-                        case 'HECELCHAKAN':
-                            $id_centro = 3;
-                            break;
-                        case 'CANDELARIA':
-                            $id_centro = 4;
-                            break;
-                        case 'ESCARCEGA':
-                            $id_centro = 5;
-                            break;
-                        case 'SEYBAPLAYA':
-                            $id_centro = 6;
-                            break;
-                        case 'ATASTA':
-                            $id_centro = 7;
-                            break;
-                        case 'MAMANTEL':
-                            $id_centro = 8;
-                            break;
-                        case 'TENABO':
-                             $id_centro = 9;
-                            break;
-                        case 'NUNKINI':
-                             $id_centro = 10;
-                            break;
-                        case 'CHAMPOTON':
-                             $id_centro = 11;
-                            break;
-                        case 'CHICBUL':
-                             $id_centro = 12;
-                            break;
-                        case 'BECAL':
-                             $id_centro = 13;
-                            break;
-                        case 'CALKINI':
-                             $id_centro = 14;
-                            break;
-                        case 'XPUJIL':
-                             $id_centro = 15;
-                            break;
-                        case 'LEY FEDERAL DE REFORMA AGRARIA':
-                             $id_centro = 16;
-                            break;
-                        case 'ADOLFO LOPEZ MATEOS':
-                             $id_centro = 17;
-                            break;
-                        case 'NUEVO PROGRESO':
-                             $id_centro = 18;
-                            break;
-                        case 'XBACAB':
-                             $id_centro = 19;
-                            break;
-                        case 'LERMA':
-                             $id_centro = 20;
-                            break;
-                        case 'DON SAMUEL':
-                             $id_centro = 21;
-                            break;
-                        case 'LIBERTAD':
-                             $id_centro = 22;
-                            break;
-                        case 'UKUM':
-                             $id_centro = 23;
-                            break;
-                        case 'ISLA AGUADA':
-                             $id_centro = 24;
-                            break;
-                        case 'LA ESMERALDA':
-                             $id_centro = 25;
-                            break;
-                        case 'BOLONCHEN DE REJON':
-                             $id_centro = 26;
-                            break;
-                        case 'SIHO-CHAC':
-                             $id_centro = 27;
-                            break;
-                        case 'EL DESENGAÑO':
-                             $id_centro = 28;
-                            break;
-                        case 'JOSE MARIA MORELOS, EL CIVALITO':
-                             $id_centro = 29;
-                            break;
-                        case 'EL AGUACATAL':
-                             $id_centro = 30;
-                            break;
-                        case 'DZIBALCHEN':
-                             $id_centro = 31;
-                            break;
-                        case 'EL JUNCAL':
-                             $id_centro = 32;
-                            break;
-                        case 'EL CARMEN II':
-                             $id_centro = 33;
-                            break;
-                        case 'EL TESORO':
-                             $id_centro = 34;
-                            break;
-                        case 'CHINA':
-                             $id_centro = 35;
-                            break;
-                        case 'CONQUISTA CAMPESINA':
-                             $id_centro = 36;
-                            break;
-                        case 'PICH':
-                             $id_centro = 37;
-                            break;
-                        case 'EL NARANJO':
-                             $id_centro = 38;
-                            break;
-                        case 'CONSTITUCION':
-                             $id_centro = 39;
-                            break;
-                    }*/
-              //Extraer director y centro
-              //$id_centro = 3;
-             /* $centro_json = $this->curl->init()->get('https://rk.cobacam.edu.mx/api/wscentros/'.$id_centro.'?type=json');
-              */
+              
               if(!$centro)
               {
                     $this->session->set_flashdata('error',lang('centro:not_found'));
@@ -400,7 +335,7 @@ class Admin extends Admin_Controller {
               //$director = $this->db->where(array('id_centro' => $id_centro ,'activo' => 1,'user_id IS NOT NULL' => NULL ))->get('directores')->row();
               
               $director_json = $this->curl->init()->set_user('cobacam','1psk2355')->get('https://rk.cobacam.edu.mx/api/wsempleados/'.$centro->director.'?type=json');
-          
+              
               
               $director = $director_json?json_decode($director_json):array();
               
@@ -434,9 +369,9 @@ class Admin extends Admin_Controller {
               elseif ($tipo == 'devolucion') 
               {
                 $datetime = new DateTime($asignacion->removido);
-                 $centro = $this->db->select('localidad , municipio, ')
-                        ->where('id',$id_centro)
-                        ->get('default_centros')->row(); 
+                // $centro = $this->db->select('localidad , municipio, ')
+                  //      ->where('id',$id_centro)
+                    //    ->get('default_centros')->row(); 
                 if($centro->localidad == $centro->municipio)
                 {
                    $fecha= $centro->municipio.', Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')));  
@@ -449,9 +384,9 @@ class Admin extends Admin_Controller {
                 $doc = 'devolucion_chrome';
                 $data = array('serial'=>$asignacion->id_chromebook,
                     //'responsable'=>$asignacion->responsable,
-                    'plantel'=>substr($asignacion->org_path,9),
+                    'plantel'=> $centro->nombre,//substr($asignacion->org_path,9),
                     'alumno'=>$asignacion->full_name,
-                    'matricula'=>$result->matricula,
+                    'matricula'=>$alumno->matricula,
                     'fecha'=>$fecha,
                     'observaciones'=>$asignacion->observaciones);# code...
               }
@@ -477,6 +412,399 @@ class Admin extends Admin_Controller {
            
         $html2pdf->writeHTML($output);
         $html2pdf->Output($doc.'_'.now().'.pdf','I');
+        
+     
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public function report()
+    {
+        $estatus = $_GET["estatus"];
+        $org =     $_GET["org"];
+        $base_where =  array();
+        if(is_numeric($estatus)&& $estatus==0)
+        {
+            if(empty($org) == false)
+            {
+              $base_where['org_path'] = $org;
+              $plantel = explode("/",$org);  
+                      $plantel  =  str_replace('/','',$plantel[count($plantel)-1]);    
+              $title = 'Relación de Chromebooks Disponibles '.$plantel; 
+ 
+            }
+                 $chromebooks  = $this->chromebook_m->where($base_where)
+                                ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
+                                ->get_all();
+                if(empty($chromebooks) == true)
+                {
+                  $title = $plantel.' No Cuenta con Chromebooks Disponibles'; 
+                } else
+                {
+                 //$title = 'Relación de Chromebooks Disponibles';         
+                     $table = '<tbody>';
+                     $table_header = '<tr>';
+                    $count = count($chromebooks)<9?count($chromebooks):9;
+                    for ($i = 1; $i <= $count; $i++) 
+                    {
+                     $table_header .='<th width="63"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Serial</th>';
+                    }
+                     $table_header .= '</tr>';
+                    $c=0;
+                    $count = 0;
+                    foreach ($chromebooks as $chromebook)
+                    {        
+                         if($c == 0)
+                        {
+                             $table .= '<tr>';                                
+                        }    
+                                    
+                        $table .='<td  width="63"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->id.'</td>';
+                        $c++;
+                        $count++;
+                        if($c == 9)
+                        {
+                             $table .= '</tr>'; 
+                             $c = 0;
+                        }
+                    }
+                 
+                    if($c == 0){
+                        $table .='</tbody>';
+                    }
+                    else{
+                        $table .='</tr></tbody>';
+                    } 
+                     $total= 'Total: '.$count;      
+                }           
+          
+        }
+        elseif(is_numeric($estatus)&& $estatus==1)
+        {   
+            $base_where   = array();         
+            $chromebooks = $this->asignacion_m->where($base_where)
+                                ->select('responsable,full_name,observaciones, org_path,chromebook_asignacion.id AS id,chromebook_asignacion.email,asignado,id_chromebook')
+                                
+                                ->join('emails','emails.email=chromebook_asignacion.email')
+                                ->where('removido IS NULL',null)->where('org_path',$org)->get_all();
+                    $count = 0;
+                    if(empty($chromebooks)==false){
+                      $plantel = explode("/",$org);  
+                      $plantel  =  str_replace('/','',$plantel[count($plantel)-1]);
+                     $title = 'Relación de Chromebooks Asignadas a/al '.$plantel;
+                     $table_header = '<tr>';
+                     $table_header .='<th width="63"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Serial</th>';
+                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Nombre</th>';
+                     $table_header .='<th width="170"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Org</th>';
+                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Email</th>';
+                     $table_header .= '</tr>';
+                    $table = '<tbody>';
+                  
+                    foreach ($chromebooks as $chromebook)
+                    {        
+                        $count++;
+                        $table .= '<tr>';  
+                                    
+                        $table .='<td  width="63"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->id_chromebook.'</td>';
+                        $table .='<td  width="200"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->full_name.'</td>';
+                        $table .='<td  width="170"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px;border-bottom: #7A7A7A 1px solid;"> '.$chromebook->org_path.'</td>';
+                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->email.'</td>';
+                        $table .= '</tr>'; 
+                    }
+                    $table .= '</tbody>';
+                    $total= 'Total Asignadas: '.$count;
+                }
+                else{
+                    $table .= '<tr>';  
+                                    
+                        $table .='<td  width="650"; align="center" style="padding: 3px;vertical-align: middle;font-size: 14px;"> '.$org.' NO Cuenta con Chromebooks Asignadas</td>';
+                        $table .= '</tr>'; 
+                }
+        }
+        else{
+            if(is_string($estatus) && $estatus != 'general')
+            {
+                $base_where['org_path'] = '/Dirección General';
+                if($estatus == 'reparacion')
+                {
+                    $base_where['estatus'] = 'reparacion';
+                }
+                elseif($estatus == 'baja')
+                {
+                    $base_where['estatus'] = 'baja';
+                }
+                elseif($estatus == 'extraviado')
+                {
+                    $base_where['estatus'] = 'extraviado';
+                }
+                elseif($estatus == 'disponible')
+                {
+                    $base_where['estatus'] = 'disponible';
+                }
+                else
+                {
+                   $this->session->set_flashdata('error',lang('chromebook:error_doc'));
+            
+                    redirect('admin/chromebooks');
+                }
+                $chromebooks  = $this->chromebook_m->where($base_where)
+                                //->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
+                                ->get_all();
+                    if(empty($chromebooks) == true)
+                    {
+                      $title = ' No se existen Chromebooks con el Estatus: '.ucwords($estatus); 
+                    } 
+                    else
+                    {
+                         $title = 'Relación de Chromebooks con Estatus: '.ucwords($estatus);          
+                         $table = '<tbody>';
+                         $table_header = '<tr>';
+                        $count = count($chromebooks)<9?count($chromebooks):9;
+                        for ($i = 1; $i <= $count; $i++) 
+                        {
+                         $table_header .='<th width="63"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Serial</th>';
+                        }
+                        $table_header .= '</tr>';
+                        $c=0;
+                        $count = 0;
+                        foreach ($chromebooks as $chromebook)
+                        {        
+                             if($c == 0)
+                            {
+                                 $table .= '<tr>';                                
+                            }    
+                                        
+                            $table .='<td  width="63"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->id.'</td>';
+                            $c++;
+                            $count ++;
+                            if($c == 9)
+                            {
+                                 $table .= '</tr>'; 
+                                 $c = 0;
+                            }
+                            
+                        }
+                     
+                        if($c == 0){
+                            $table .='</tbody>';
+                        }
+                        else{
+                            $table .='</tr></tbody>';
+                        }      
+                  }   
+                  $total= 'Total: '.$count;      
+            }
+            elseif(is_string($estatus) && $estatus == 'general')
+            {
+                $title = 'Reporte De Chromebooks'; 
+                $count = 0; 
+                $asignados = $this->asignacion_m->select('COUNT(estatus) as cantidad,estatus,org_path')
+                                ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
+                                ->where('removido IS NULL',null)
+                                ->group_by('estatus,org_path')
+                                ->order_by('org_path','ASC')
+                                ->get_all();
+                     $table_header = '<tr>';
+                     $table_header .='<th width="250"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Plantel/Centro</th>';
+                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Estatus</th>';
+                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Total</th>';
+                     $table_header .= '</tr>';
+                    $table = '<tbody>';
+                   
+                    foreach ($asignados as $asignado)
+                    {        
+                         $org_path_explod = explode("/",$asignado->org_path);  
+                        $asignado->org_path  =  str_replace('/','',$org_path_explod[count($org_path_explod)-1]);
+                        $count++;
+                        $table .= '<tr>';  
+                                    
+                        $table .='<td  width="250"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$asignado->org_path.'</td>';
+                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px;border-bottom: #7A7A7A 1px solid;"> Asignados </td>';
+                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$asignado->cantidad.'</td>';
+                        $table .= '</tr>'; 
+                    }
+                    $chromebooks  = $this->chromebook_m->select('COUNT(estatus) as cantidad,estatus,org_path')
+                               ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                                ->group_by('estatus,org_path')
+                                ->order_by('estatus','ASC')
+                                ->get_all();
+                    foreach ($chromebooks as $chromebook)
+                    {        
+                         $org_path_explod = explode("/",$chromebook->org_path);  
+                        $chromebook->org_path  =  str_replace('/','',$org_path_explod[count($org_path_explod)-1]);
+                        $count++;
+                        $chromebook->org_path = $chromebook->org_path?$chromebook->org_path:'Almacen';
+                        $table .= '<tr>';  
+                                    
+                        $table .='<td  width="250"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->org_path.'</td>';
+                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px;border-bottom: #7A7A7A 1px solid;"> '.ucwords($chromebook->estatus).' </td>';
+                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->cantidad.'</td>';
+                        $table .= '</tr>'; 
+                    }
+                    $table .= '</tbody>';
+                $total_asignados = $this->asignacion_m->select('COUNT(estatus) as cantidad')
+                                ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
+                                ->where('removido IS NULL',null)
+                                ->get_all();
+                 $total_disponibles  = $this->chromebook_m->select('COUNT(estatus) as cantidad')
+                               ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null,'estatus' => 'disponible'))
+                                ->get_all();
+                $total_reparacion  = $this->chromebook_m->select('COUNT(estatus) as cantidad')
+                               ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null,'estatus' => 'reparacion'))
+                                ->get_all();
+                 $total_baja  = $this->chromebook_m->select('COUNT(estatus) as cantidad')
+                               ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null,'estatus' => 'baja'))
+                                ->get_all();
+                 $total_extraviado  = $this->chromebook_m->select('COUNT(estatus) as cantidad')
+                               ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null,'estatus' => 'extraviado'))
+                                ->get_all();
+            
+           $totales =  $total_asignados['0']->cantidad + $total_disponibles['0']->cantidad + $total_reparacion['0']->cantidad + $total_baja['0']->cantidad + $total_extraviado['0']->cantidad;
+            $total_gral= 'Total Asignadas: '.$total_asignados['0']->cantidad.' 
+            <br /> Total Disponibles:'.$total_disponibles['0']->cantidad.' 
+            <br /> Total Reparación:'.$total_reparacion['0']->cantidad.' 
+            <br />Total Bajas:'.$total_baja['0']->cantidad.'
+            <br />Total Extraviadas:'.$total_extraviado['0']->cantidad.'
+            <br />Total Chromebooks:'.$totales;  
+                     
+            }
+            else
+            {
+              $this->session->set_flashdata('error',lang('chromebook:error_doc'));
+            
+              redirect('admin/chromebooks');
+            }
+        }
+        
+        ini_set('max_execution_time', 300);
+        $this->load->library(array('pdf'));
+        
+        $html2pdf = new HTML2PDF('P', 'A4', 'es');
+        
+        ob_clean();
+       
+        $output = ''; 
+        $doc = 'reporte_chrome';
+        $output=$this->template->set_layout(false)
+          //                   ->title('Reporte ')
+                               ->enable_parser(true)
+            ->build('templates/'.$doc,
+              array('table'=>$table,
+                    'table_header'=>$table_header,
+                    'title'=>$title,
+                    'total'=>$total,
+                    'total_gral'=>$total_gral),true);
+           
+        $html2pdf->writeHTML($output);
+        $html2pdf->Output($doc.'_'.now().'.pdf');
         
      
     }
@@ -597,168 +925,7 @@ class Admin extends Admin_Controller {
         return $xsub;
         
      }
-    public function report()
-    {
-        $estatus = $_GET["estatus"];
-        $org =     $_GET["org"];
-        $base_where =  array();
-
-        if(is_numeric($estatus)&& $estatus==0)
-        {
-            if(empty($org) == false)
-            {
-              $base_where['org_path'] = $org;
-              
-              $plantel = explode("/",$org);  
-
-              $plantel  =  str_replace('/','',$plantel[count($plantel)-1]); 
-
-              $title = 'Relación de Chromebooks Disponibles '.$plantel; 
- 
-            }
-            
-            $chromebooks  = $this->chromebook_m->where($base_where)
-                                ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
-                                ->get_all();
-
-            if(empty($chromebooks) == true)
-            {
-                  $title = $plantel.' No Cuenta con Chromebooks Disponibles'; 
-            }
-            else
-            {
-
-               //  $title = 'Relación de Chromebooks Disponibles';         
-                 $table = '<tbody>';
-                 $table_header = '<tr>';
-                
-                $count = count($chromebooks)<9?count($chromebooks):9;
-                
-                for ($i = 1; $i <= $count; $i++) 
-                {
-                 $table_header .='<th width="63"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Serial</th>';
-                }
-                 $table_header .= '</tr>';
-                $c=0;
-                foreach ($chromebooks as $chromebook)
-                {        
-                     if($c == 0)
-                    {
-                         $table .= '<tr>';                                
-                    }    
-                                
-                    $table .='<td  width="63"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->id.'</td>';
-                    $c++;
-
-                    if($c == 9)
-                    {
-                         $table .= '</tr>'; 
-                         $c = 0;
-                    }
-
-                }
-                 
-                if($c == 0){
-                    $table .='</tbody>';
-                }
-                else{
-                    $table .='</tr></tbody>';
-                }
-            }                 
-          
-        }
-        elseif(is_numeric($estatus)&& $estatus==1)
-        {   
-            $base_where   = array();
-            
-         
-
-            $chromebooks = $this->asignacion_m->where($base_where)
-                                ->select('responsable,full_name,observaciones, org_path,chromebook_asignacion.id AS id,chromebook_asignacion.email,asignado,id_chromebook')
-                                
-                                ->join('emails','emails.email=chromebook_asignacion.email')
-                                ->where('removido IS NULL',null)->where('org_path',$org)->get_all();
-                    $count = 0;
-
-                    if(empty($chromebooks)==false){
-
-                     $title = 'Relación de Chromebooks Asignadas a '.$org;
-
-                     $table_header = '<tr>';
-
-                     $table_header .='<th width="63"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Serial</th>';
-                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Nombre</th>';
-                     $table_header .='<th width="170"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Org</th>';
-                     $table_header .='<th width="200"; align="center" style="border-bottom: #a6ce39 2px solid;padding: 3px; font-size: 10px;">Email</th>';
-
-                     $table_header .= '</tr>';
-
-                    $table = '<tbody>';
-                  
-                    foreach ($chromebooks as $chromebook)
-                    {        
-                        $count++;
-
-                        $table .= '<tr>';  
-                                    
-                        $table .='<td  width="63"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->id_chromebook.'</td>';
-                        $table .='<td  width="200"; align="left" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->full_name.'</td>';
-                        $table .='<td  width="170"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px;border-bottom: #7A7A7A 1px solid;"> '.$chromebook->org_path.'</td>';
-                        $table .='<td  width="200"; align="center" style="padding: 3px;vertical-align: middle;font-size: 10px; border-bottom: #7A7A7A 1px solid;">'.$chromebook->email.'</td>';
-
-                        $table .= '</tr>'; 
-                    }
-
-                    $table .= '</tbody>';
-
-                    $total= 'Total Asignadas: '.$count;
-
-                }
-                else{
-                    $table .= '<tr>';  
-                                    
-                        $table .='<td  width="650"; align="center" style="padding: 3px;vertical-align: middle;font-size: 14px;"> '.$org.' NO Cuenta con Chromebooks Asignadas</td>';
-                        $table .= '</tr>'; 
-                }
-
-
-        }
-        else
-        {
-              $this->session->set_flashdata('error',lang('chromebook:error_report'));
-            
-              redirect('admin/chromebooks');
-        }
-        
-
-        ini_set('max_execution_time', 300);
-
-        $this->load->library(array('pdf'));
-        
-        $html2pdf = new HTML2PDF('P', 'A4', 'es');
-        
-
-        ob_clean();
-       
-
-        $output = ''; 
-
-        $doc = 'reporte_chrome';
-
-
-        $output=$this->template->set_layout(false)
-          //                   ->title('Reporte ')
-                               ->enable_parser(true)
-            ->build('templates/'.$doc,
-              array('table'=>$table,
-                    'table_header'=>$table_header,
-                    'title'=>$title,
-                    'total'=>$total,),true);
-           
-        $html2pdf->writeHTML($output);
-        $html2pdf->Output($doc.'_'.now().'.pdf');
-     
-    }
+    
       
     
     

@@ -53,7 +53,7 @@
         			)
                 ),
                 'Asignaciones'=>array(
-                    'name'=>'chromebook:asinaciones_title',
+                    'name'=>'chromebook:asignaciones_title',
                     'uri' => 'admin/chromebooks/asignaciones',
         			
                 )
