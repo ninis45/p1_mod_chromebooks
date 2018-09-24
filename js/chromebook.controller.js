@@ -340,6 +340,8 @@
         $scope.method = method;
         $scope.history = history;
         $scope.chrome = chrome;
+        $scope.emails = [];
+        $scope.total_emails=0;
         
         if(chrome.id_chromebook)//Pauta para desasignar
         {
@@ -363,8 +365,11 @@
             };
         }
         
+        $scope.title = 'Asignar/Remover '+$scope.form.id_chromebook;
+        
         if(method=='details')
         {
+            $scope.title = 'Detalles '+$scope.form.id_chromebook;
             history();
         }
         function history()
@@ -448,12 +453,21 @@
             
             
             if(oldValue && oldValue != newValue )$scope.org_path='';
+            $scope.total_emails =0;
+            var email = '';
+            if($scope.form.email)
+            {
+                email = $scope.form.email.email;
+            }
             
-            $http.post(SITE_URL+'admin/chromebooks/asignaciones/get_emails',{org_path:org_path.org_path}).then(function(response){
+            $http.post(SITE_URL+'admin/chromebooks/asignaciones/get_emails',{org_path:org_path.org_path,email:email}).then(function(response){
  
                
                $scope.emails = response.data;
-              
+               $.each($scope.emails,function(index,data){
+                
+                    $scope.total_emails++;
+               });
                 
             });
             
@@ -644,38 +658,6 @@
         }
     }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
         
     function InputModalRemoverCsv($scope,$http,$uibModalInstance,$cookies,$timeout,Upload,logger)
     {     
@@ -726,14 +708,21 @@
                   $scope.dispose = true;
 
                   $scope.status = result.status;
-                  if(result.status == false)
+                  $scope.message = result.message;
+                  $scope.remove_result = result.data;
+                  
+                  
+                  if(result.status == true)
                   {
-                      $scope.remove_result = result.data;
+                     setTimeout(function() {
+                        location.href = SITE_URL+'admin/chromebooks/asignaciones';
+                    }, 2000);
+                     
                   }
-                  else
+                  /*else
                   {
-                      $scope.message = result.message;
-                  }   
+                      
+                  } */  
                 /* if(result.asignado)
                   {
                       $scope.cambio = true;

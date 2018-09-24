@@ -1,12 +1,16 @@
 <section ng-controller="IndexCtrl">
         
-    <a href="#"  ng-click="report()" uib-tooltip="Reporte" class="btn btn-primary pull-right">Reporte</a>
-    <a href="#"  ng-click="remover_csv()" uib-tooltip="Reporte" class="btn btn-default pull-right">Remover por CSV</a>
+    
+    <a href="#"  ng-click="report()" uib-tooltip="Reporte" class="btn btn-primary pull-right">Reporte</a> 
+    
+   
+    <a href="#"  ng-click="remover_csv()" uib-tooltip="Reporte" class="btn btn-default pull-right">Remover por CSV</a> 
+    <a href="<?=base_url('files/download/9036ebac1a89657')?>" target="_blank" class="btn btn-default pull-right"> Descargar plantilla</a>
     <div class="row col-md-12">
 
         <div class="col-md-6">
             <h4 class="text-success">Disponibles</h4>
-            <input type="text" class="form-control" ng-model="txt_disponibles" />
+            <input type="text" class="form-control" ng-model="txt_disponibles" placeholder="Buscar series" />
             <hr />
             <p class="text-right">Total registros:{{(chromebooks).length}}</p>
             <table class="table">
@@ -29,8 +33,7 @@
         <div class="col-md-6">
             <h4 class="text-success">Asignados</h4>
             <div class="input-group">
-                <input type="text" class="form-control" data-ng-model="search_asignados"
-                       />
+                <input type="text" class="form-control" data-ng-model="search_asignados" placeholder="Buscar series, email o nombre" />
                      <span class="input-group-btn">
                         <button class="btn" ng-click="search()"><i class="fa fa-search"></i></button>
                      </span>
@@ -49,8 +52,10 @@
                     </tr>
                 </thead>
                 <tr ng-repeat="chrome in asignaciones">
-                    <td><a href="#" ng-click="details(chrome)">{{chrome.id_chromebook}}</a><br />
-                    <span class="text-muted">{{chrome.email}}</span></td>
+                    <td>
+                        <a href="#" ng-click="details(chrome)">{{chrome.id_chromebook}}</a><br />
+                        <span class="text-muted">{{chrome.email}}</span>
+                    </td>
                     <td><a href="#" ng-click="remove(chrome)">Remover</a></td>
                 </tr>
             </table>
@@ -70,7 +75,7 @@
 </section>
 <script type="text/ng-template" id="modalForm.html">
     <div class="modal-header" >
-        <h3>Asignar/Remover</h3>
+        <h3>{{title}}</h3>
     </div>
      <?php  echo form_open('','name="frm" id="frm"');?>
     <div class="modal-body">
@@ -94,19 +99,24 @@
                             
                      </div> 
                      <div class="form-group">
-                            <label>Email</label>
-                            <select class="form-control" name="email" ng-readonly="form.id" ng-model="form.email" ng-options="email.email for email in emails track by email.email" required>
-                                <option value=""> [ Elegir ] </option>
-                                
-                            </select>
+                            <label>Responsable</label>
+                            <div class="input-group">
+                                <select class="form-control" name="email" ng-readonly="form.id" ng-model="form.email" ng-options="email.full_name for email in emails track by email.email" required>
+                                    <option value=""> [ Elegir ] </option>
+                                    
+                                </select>
+                                <span class="input-group-addon">{{total_emails}}</span>
+                            </div>
                             <div ng-messages="frm.email.$error"  role="alert" ng-if="frm.email.$dirty">
                                     <div class="text-danger" ng-message="required">Este campo es requerido</div>
                              </div>
+                             
                      </div>   
                      
                      <div class="form-group">
-                            <label>Responsable</label>
-                            <input type="text" class="form-control" name="responsable"  ng-readonly="form.id" ng-model="form.email.full_name">
+                            <label>Email</label>
+                            <input type="hidden" class="form-control" name="responsable"  ng-readonly="form.id" ng-model="form.email.full_name">
+                            <input type="text" class="form-control"   ng-readonly="form.id" value="{{form.email.email}}" >
                             <div ng-messages="frm.responsable.$error"  role="alert" ng-if="frm.responsable.$dirty">
                                     <div class="text-danger" ng-message="required">Este campo es requerido</div>
                              </div>
@@ -126,22 +136,27 @@
                             <th>Correo</th>
                             <th>Asignado</th>
                             <th>Removido</th>
+                            <th width="2%"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-repeat="history in historial">
                         
-                            <td>{{history.email}}</td>
+                            <td>
+                                {{history.responsable}}<br/>
+                                <a href="mailto:{{history.email}}" class="text-muted">{{history.email}}</a>
+                            </td>
                             <td>
                                
                                 
-                                <a title="Descargar comodato" ng-if = "history.removido == null " target="_blank" href="acuse_f/comodato/{{history.id}}" >{{history.asignado|date :'dd/mm/yyyy'}}</a>
+                                <a title="Descargar comodato" ng-if = "history.removido == null " target="_blank" href="acuse_f/comodato/{{history.id}}" >{{history.asignado}}</a>
 
-                                <span  ng-if = "history.removido" >{{history.asignado|date :'dd/mm/yyyy'}}</span>
+                                <span  ng-if = "history.removido" >{{history.asignado}}</span>
                             </td>
                             <td>
-                                <a target="_blank" href="acuse_f/devolucion/{{history.id}}" >{{history.removido|date :'dd/mm/yyyy'}}</a> 
+                                <a title="Descargar acuse de removido" target="_blank" href="acuse_f/devolucion/{{history.id}}" >{{history.removido}}</a> 
                             </td>
+                            <td><i class="zmdi zmdi-collection-text" tooltip-placement="left" uib-tooltip="{{history.observaciones}}" ng-if="history.observaciones" ></i></td>
                         </tr>
                     </tbody>
                  </table>
@@ -218,10 +233,11 @@
                                 <md-progress-linear md-mode="determinate" ng-show="file_csv.progress >= 0" value="{{file_csv.progress}}"></md-progress-linear>
                                    
                      </div>
-                     <p  class="extra" ng-if="remove_result.length>0">Errores : {{remove_result.length}}</p>
-                     <div  class="well" data-slim-scroll data-scroll-height="200px" ng-if="remove_result.length>0" >          
+                     <p  class="extra" ng-if="remove_result.length>0" >Errores : {{remove_result.length}}</p>  
+                     <div  class="well"   ng-if="remove_result.length>0" > 
+                                 
                           <ul class="list-unstyled list-users-li">
-                              <li ng-repeat="remove in remove_result ">
+                              <li ng-repeat="remove in remove_result">
                                   <span class="fa fa-check text-success" ng-if="remove.status"></span>
                                   <span class="fa {{remove.icon}} text-danger" ng-if="!remove.status" title="{{remove.message}}"></span>
                                   {{remove.serial}}                                                                              

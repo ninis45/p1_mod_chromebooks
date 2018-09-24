@@ -8,7 +8,7 @@ class Admin extends Admin_Controller {
         
       //  $this->load->library('GService');
         $this->load->model(array('chromebook_m','asignacion_m','files/file_folders_m','emails/org_m'));
-        $this->lang->load('chromebook');
+        $this->lang->load(array('chromebook','calendar'));
         $this->load->library(array('files/files'));
     }
         
@@ -31,12 +31,19 @@ class Admin extends Admin_Controller {
             $orgs_path = $this->org_m->where_in('id',$orgs_perm)->dropdown('id','org_path');
                 if(count($orgs_path)>0)
                  {
-                    $chromebooks  = $this->chromebook_m->where_in('org_path',$orgs_path)
-                                                ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                    $disponibles  = $this->chromebook_m->select('chromebooks.id AS id,chromebooks.org_path,estatus')
+                                                ->where_in('org_path',$orgs_path)
+                                                ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS  NULL)',null)
+                                               // ->where('(removido IS NULL)',NULL)
+                                                //->join('chromebook_asignacion','chromebook_asignacion.id_chromebook=chromebooks.id','LEFT')
+                                                //->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                                                //->group_by('default_chromebooks.id')
+                                                //->order_by('chromebook_asignacion.removido','DESC')
                                                 ->get_all();
                     
-                    $asignaciones = $this->asignacion_m->where_in('org_path',$orgs_path)
-                                        ->select('id_chromebook AS id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
+                    $asignados = $this->asignacion_m->select('email,chromebooks.id AS id,chromebooks.org_path,\'asignado\' AS estatus')
+                                        ->where_in('org_path',$orgs_path)
+                                        //->select('id_chromebook AS id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
                                         ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
                                         ->where('removido IS NULL',null)
                                         ->get_all();
@@ -44,20 +51,31 @@ class Admin extends Admin_Controller {
             
         }
         else{
-            $chromebooks  = $this->chromebook_m 
-                                ->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
-                                ->get_all();
-            
-            $asignaciones = $this->asignacion_m->select('id_chromebook AS   id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
-                                ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
-                                ->where('removido IS NULL',null)
-                                ->get_all();
+                    $disponibles  = $this->chromebook_m->select('chromebooks.id AS id,chromebooks.org_path,estatus')
+                                                
+                                                ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS  NULL)',null)
+                                               // ->where('(removido IS NULL)',NULL)
+                                                //->join('chromebook_asignacion','chromebook_asignacion.id_chromebook=chromebooks.id','LEFT')
+                                                //->where(array('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)'=>null))
+                                                //->group_by('default_chromebooks.id')
+                                                //->order_by('chromebook_asignacion.removido','DESC')
+                                                ->get_all();
+                    
+                    $asignados = $this->asignacion_m->select('email,chromebooks.id AS id,chromebooks.org_path,\'asignado\' AS estatus')
+                                        
+                                        //->select('id_chromebook AS id,chromebook_asignacion.email,estatus,chromebooks.observaciones,org_path')
+                                        ->join('chromebooks','chromebooks.id=chromebook_asignacion.id_chromebook')
+                                        ->where('removido IS NULL',null)
+                                        ->get_all();
                 
         }
-        $resume = array_merge($chromebooks,$asignaciones);
+        
+        $resume = array_merge($disponibles,$asignados);
+        
+        //print_r($resume);
         $this->template->title($this->module_details['name'])
                    ->append_metadata('<script type="text/javascript"> var orgs='.json_encode($orgs).', resume='.json_encode($resume).';</script>')
-                   ->set('chromebooks',$chromebooks)
+                   ->set('chromebooks',$resume)
                    ->append_js('module::chromebook.controller.js')
                    ->build('admin/chromebooks/index');
     }
@@ -273,12 +291,16 @@ class Admin extends Admin_Controller {
 
     public function acuse_f($tipo= '',$id_history = 0)
     {
+         ini_set('max_execution_time', 0);
       $this->load->library('curl');
       $asignacion = $this->asignacion_m->select('*, chromebook_asignacion.id AS folio')
                                        ->join('emails','emails.email=chromebook_asignacion.email')
-                                       ->get_by('chromebook_asignacion.id',$id_history) ;
+                                       ->get_by(array(
+                                            'chromebook_asignacion.id'=>$id_history,
+                                            //'emails.email' => $this->input->get('email')
+                                        ));
                                        
-     
+      
        if($asignacion->table && $asignacion->table == 'alumnos' && ($tipo == 'comodato' || $tipo == 'devolucion' ))
         {
            $idalum  = $asignacion->table_id;
@@ -299,7 +321,7 @@ class Admin extends Admin_Controller {
            $ctrl = 0;
            $centros = json_decode(trim($centros_json));
            $centro  = false;
-           
+         
            while($ctrl<count($centros))
            {
                
@@ -313,7 +335,7 @@ class Admin extends Admin_Controller {
                
                //print_r($centros[$ctrl]->nombre.':'.strlen($centros[$ctrl]->nombre).'-'.$asignacion->org_path.':'.strlen($asignacion->org_path).'<br/>');
                
-               if($centros[$ctrl]->nombre == $asignacion->org_path)
+               if(strtolower($centros[$ctrl]->nombre) == strtolower($asignacion->org_path))
                {
                     //print_r($centros[$ctrl]->nombre.' : '.strlen($centros[$ctrl]->nombre).' - '.$nombre_centro.' : '.strlen($nombre_centro).'<br/>');
                    $centro = $centros[$ctrl];
@@ -321,7 +343,7 @@ class Admin extends Admin_Controller {
                }
                $ctrl++;
            }
-           
+            
            $alumno = json_decode($alumno_json);
               
               if(!$centro)
@@ -342,10 +364,12 @@ class Admin extends Admin_Controller {
               $data['director'] = $director->nombre;
               if($tipo == 'comodato')
               {
+                $datetime = new DateTime($asignacion->asignado);
+                
                 $doc = 'comodato_alumno';
-                $dia =date("d");
-                $mes = strftime ("%B",strtotime(date("M")));
-                $anio = date("Y");
+                $dia =$datetime->format('d');
+                $mes = month_long($datetime->format('m'));// strftime ("%B",strtotime(date("M")));
+                $anio = $datetime->format('Y');
                 
                 $dia_string = $this->numtoletras($dia);
                 $anio_string = $this->numtoletras($anio);
@@ -368,17 +392,29 @@ class Admin extends Admin_Controller {
               }
               elseif ($tipo == 'devolucion') 
               {
+                
+                if(!$asignacion->removido)
+                {
+                    $this->session->set_flashdata('error',lang('chromebook:error_doc'));
+            
+                     redirect('admin/chromebooks/asignaciones');
+                }
+                
                 $datetime = new DateTime($asignacion->removido);
                 // $centro = $this->db->select('localidad , municipio, ')
                   //      ->where('id',$id_centro)
                     //    ->get('default_centros')->row(); 
+                    
+               
                 if($centro->localidad == $centro->municipio)
                 {
-                   $fecha= $centro->municipio.', Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')));  
+                    //$fecha= $centro->municipio.', Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')))
+                   $fecha= $centro->municipio.', Campeche, a '.$datetime->format('d').' de '.month_long($datetime->format('m')).' de '.$datetime->format('Y');  
                 }     
                 else 
                 {
-                    $fecha= $centro->localidad.', '.$centro->municipio.', Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')));
+                    //$fecha= $centro->localidad.', '.$centro->municipio.', Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')));
+                    $fecha= $centro->localidad.', '.$centro->municipio.', Campeche, a '.$datetime->format('d').' de '.month_long($datetime->format('m')).' del '.$datetime->format('Y');
                 } 
                // $fecha = 'San Francisco de Campeche, Campeche, '.strftime(" %d de %B del %Y", strtotime($datetime->format('Y-m-d')));
                 $doc = 'devolucion_chrome';
@@ -397,8 +433,11 @@ class Admin extends Admin_Controller {
            $this->session->set_flashdata('error',lang('chromebook:error_doc'));
             
             redirect('admin/chromebooks/asignaciones');
-        }          
-        ini_set('max_execution_time', 300);
+        }   
+        
+        
+                  
+       
         $this->load->library(array('pdf'));
         
         $html2pdf = new HTML2PDF('P', 'A4', 'es');
@@ -409,119 +448,15 @@ class Admin extends Admin_Controller {
         $output=$this->template->set_layout(false)
                                ->enable_parser(true)
             ->build('templates/'.$doc,$data,true);
-           
+         
         $html2pdf->writeHTML($output);
         $html2pdf->Output($doc.'_'.now().'.pdf','I');
         
      
     }
+       
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        
     
     
     
@@ -632,7 +567,7 @@ class Admin extends Admin_Controller {
         else{
             if(is_string($estatus) && $estatus != 'general')
             {
-                $base_where['org_path'] = '/Dirección General';
+                //$base_where['org_path'] = '/Dirección General';
                 if($estatus == 'reparacion')
                 {
                     $base_where['estatus'] = 'reparacion';
@@ -656,7 +591,7 @@ class Admin extends Admin_Controller {
                     redirect('admin/chromebooks');
                 }
                 $chromebooks  = $this->chromebook_m->where($base_where)
-                                //->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
+                                ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
                                 ->get_all();
                     if(empty($chromebooks) == true)
                     {
@@ -783,7 +718,7 @@ class Admin extends Admin_Controller {
               redirect('admin/chromebooks');
             }
         }
-        
+        $fecha= 'Generado: '.date('d/m/Y');
         ini_set('max_execution_time', 300);
         $this->load->library(array('pdf'));
         
@@ -798,6 +733,7 @@ class Admin extends Admin_Controller {
                                ->enable_parser(true)
             ->build('templates/'.$doc,
               array('table'=>$table,
+                    'fecha'=>$fecha,
                     'table_header'=>$table_header,
                     'title'=>$title,
                     'total'=>$total,

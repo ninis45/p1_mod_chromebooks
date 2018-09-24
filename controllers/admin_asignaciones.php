@@ -68,7 +68,7 @@ class Admin_Asignaciones extends Admin_Controller {
          
          if($q)
          {
-            $base_where['(id_chromebook LIKE \'%'.$q.'%\'  OR default_chromebook_asignacion.email LIKE \'%'.$q.'%\')'] = null;
+            $base_where['(id_chromebook LIKE \'%'.$q.'%\'  OR default_chromebook_asignacion.email LIKE \'%'.$q.'%\' OR responsable LIKE \'%'.$q.'%\')'] = null;
          }
          
          $orgs_path = array('/Dummy/');
@@ -167,6 +167,7 @@ class Admin_Asignaciones extends Admin_Controller {
              {
              $chromebooks  = $this->chromebook_m->where_in('org_path',$orgs_path)
                                     ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
+                                    
                                     ->get_all();
             
              $total_asignaciones = $this->asignacion_m->where_in('org_path',$orgs_path)->where($base_where)
@@ -194,6 +195,7 @@ class Admin_Asignaciones extends Admin_Controller {
 
              $chromebooks  = $this->chromebook_m 
                                     ->where('id NOT IN(SELECT id_chromebook FROM default_chromebook_asignacion WHERE removido IS NULL)',null)
+                                    
                                     ->get_all();
             
              $total_asignaciones = $this->asignacion_m->where($base_where)
@@ -251,6 +253,11 @@ class Admin_Asignaciones extends Admin_Controller {
         );
         $historial = $this->asignacion_m->where('id_chromebook',$id)->get_all();
         
+        foreach($historial as &$hi)
+        {
+            $hi->removido = $hi->removido?format_date_calendar(substr($hi->removido,0,-9)):null; 
+            $hi->asignado = format_date_calendar(substr($hi->asignado,0,-9));
+        }
         if($historial)
         {
             $result['data']   = $historial;
@@ -407,7 +414,7 @@ class Admin_Asignaciones extends Admin_Controller {
     }
     function get_emails()
     {
-        
+        $email = $this->input->post('email');
         $org_path = $this->input->post('org_path');
         
         /*$result = $this->db->select('*')
@@ -421,12 +428,20 @@ class Admin_Asignaciones extends Admin_Controller {
                         ->get('emails')
                         ->result();*/
                         
-          $result = $this->db->where('org_path',$org_path)
-                             ->order_by('email')
-                            ->get('emails')
+         
+                        
+          $result = $this->db->where(array(
+                                'org_path'=>$org_path,
+                                '(email NOT IN(SELECT email FROM default_chromebook_asignacion WHERE removido IS NULL)'.(!$email?'':' OR email=\''.$email.'\'').')' => null
+                                
+                                ))
+                             ->order_by('full_name')
+                             
+                             ->get('emails')
                            
                             ->result();
-          return $this->template->build_json($result);      
+         
+          return $this->template->build_json((array)$result);      
         //if($result)echo json_encode($result);
     }
 
@@ -483,7 +498,7 @@ class Admin_Asignaciones extends Admin_Controller {
         $folder        = $this->file_folders_m->get_by_path('otros') OR show_error('Error al buscar la carpeta');
         $file_result   = Files::upload($folder->id,false,'file',false,false,false,'csv');
         
-        $error ;
+       
         
        
         if($file_result['status'])
@@ -529,17 +544,17 @@ class Admin_Asignaciones extends Admin_Controller {
                             $csv['message'] = 'La Chromebook no se encuentra asignada o no existe';
                             $csv['icon']    = 'fa fa-warning';
                             $csv['status']= false;
-                            $error = true;
+                            
                              continue;
                         } 
                         else
                         {
-                               if ($asignado->org_path != $this->input->post('org'))
+                                if ($asignado->org_path != $this->input->post('org'))
                                 {
                                     $csv['message'] = 'La Chromebook tiene otra ORG Registrada : '.$asignado->org_path;
                                    
                                     $csv['icon']    = 'fa fa-ban';
-                                   
+                                    $csv['status']  = false;
                                     continue;
                                 }
                                 else
@@ -559,68 +574,59 @@ class Admin_Asignaciones extends Admin_Controller {
                    
                     
                 }
-                
+               
                
                 
             }
-            $result['data']   = $csv_array_temp;
-            
-            
-            
-        }
-        if(!$csv_array_temp)
-        {
-           $result['status'] = true;
-           foreach($csv_array as  $key =>  &$csv)
+            if(!$csv_array_temp)
             {
                 
-                $csv_['serial']  = utf8_encode($csv['serial']);
-                
-                if(!$this->asignacion_m->update($csv['id'],array('removido' => date('Y-m-d H:i:s'),'observaciones' => $csv['observaciones']?$csv['observaciones']:null)))
-                {
-                    $result['status'] = false;
+               $result['status'] = true;
+               foreach($csv_array as  $key =>  &$csv)
+               {
+                    
+                    //$csv_['serial']  = utf8_encode($csv['serial']);
+                    
+                    if(!$this->asignacion_m->update($csv['id'],array('removido' => date('Y-m-d H:i:s'),'observaciones' => $csv['observaciones']?$csv['observaciones']:null)))
+                    {
+                        $result['status'] = false;
+                    }
+                    
                 }
+                //$result['data']   = $csv_array;
                 
+                if($result['status'])
+                {
+                    $result['message'] = lang('chromebook:removed');
+                }
+                else
+                {
+                    $result['message'] = lang('chromebook:error_removed');
+                }
             }
-            $result['data']   = $csv_array;
-        }
-        
-         
-        if($result['status'])
-        {
-            $result['message'] = lang('chromebook:removed');
+            else
+            {
+                 $result['message'] = lang('chromebook:error_list');
+                 rsort($csv_array_temp);
+                 $result['data']   = $csv_array_temp;
+            }
+             
+            
+            
+           
+            
         }
         else
         {
-            $result['message'] = lang('chromebook:error_removed');
+            $result = $file_result;
         }
+        
+        //print_r($result);
+        //exit();
         return $this->template->build_json($result);
     }
       
     
     
  }
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-    
  ?>

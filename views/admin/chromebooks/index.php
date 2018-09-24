@@ -10,11 +10,12 @@
             <h4 class="text-success">Buscar</h4>
             <input type="text" class="form-control" ng-model="txt_disponibles" />
             <hr />
-            <p class="text-right">Total registros: {{(chromebooks).length}}</p>
+            <p class="text-right">Total registros: {{(chromebooks|filter:txt_disponibles).length}}</p>
             <table class="table">
                 <thead>
                     <tr>
                         <th>SERIAL</th>
+                        <th width="10%">Estado</th> 
                         <th>Propietario</th>    
                         <th>Co-propietario</th>
                         <?php if(group_has_role('chromebooks','admin_chrome')): ?>
@@ -24,12 +25,15 @@
                 </thead>
                 <tbody>
                     <tr ng-repeat="chrome in chromebooks | filter:txt_disponibles|limitTo:20" ng-class="{'danger':chrome.estatus == 'baja','warning': chrome.estatus == 'reparacion','active': chrome.estatus == 'extraviado'}" >
-                        <td>{{chrome.id}}<br />
-                            <span ng-if="chrome.email == null && chrome.estatus == 'disponible'" class="text-muted">Disponible</span>
-                            <span ng-if="chrome.email == null && chrome.estatus == 'baja'" class="text-muted">Baja</span>
-                            <span ng-if="chrome.email == null && chrome.estatus == 'reparacion'" class="text-muted">Reparación</span>
-                            <span ng-if="chrome.email == null && chrome.estatus == 'extraviado'" class="text-muted">Extraviado</span>
-                            <span ng-if="chrome.email != null" class="text-muted">Asignado</span>
+                        <td>{{chrome.id}}
+                            
+                        </td>
+                        <td>
+                            <span ng-if="chrome.email == null && chrome.estatus == 'disponible'" class="label label-success">Disponible</span>
+                            <span ng-if="chrome.email == null && chrome.estatus == 'baja'"       class="label label-warning">Baja</span>
+                            <span ng-if="chrome.email == null && chrome.estatus == 'reparacion'" class="label label-warning">Reparación</span>
+                            <span ng-if="chrome.email == null && chrome.estatus == 'extraviado'" class="label label-danger">Extraviado</span>
+                            <span ng-if="chrome.email != null" class="label label-default">Asignado</span>
                         </td>
                         <td>{{chrome.email}}</td>
                         <td>{{chrome.org_path}}</td>

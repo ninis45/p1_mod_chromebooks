@@ -21,7 +21,7 @@
 				
 			),
 			'description' => array(
-				'en' => '.',
+				'en' => 'Chromebooks management',
 				
 				'es' => 'Administración de Chromebooks',
 				
